@@ -21,10 +21,42 @@ train <- train %>%
 
 **Prompt:**  First, calculate three things for both the treated and the controls: the average `att_start`, `att_end` and `att_chg`.  Do those numbers make sense? Presumably, there is a mathematical relationship among them that you can check. (Recall that, for each person, `att_end` minus `att_start` should equal `att_chg`.) Second (in a new code chunk), and just as we did with income, calculate the difference in means between  treated and the controls for only `att_chg`. (You will want to get those values on the same row, so that subtraction can be done.) Does the difference seem "large?" Do the numbers seems sensible?  Provide an hypothesis as to why the average `att_chg` is not zero in both groups.
 
+```{r}
+
+mean_train <- train %>%
+  group_by(treatment) %>%
+  summarize(
+    avg_att_start = mean(att_start),
+    avg_att_end = mean(att_end),
+    avg_att_chg = mean(att_chg)
+  )
+
+pivot_trains <- mean_train %>%
+  select(treatment, avg_att_chg) %>%
+  pivot_wider(id_cols = everything(), names_from = treatment, values_from = avg_att_chg) %>%
+  mutate(diff = Treated - Control) %>%
+  pull(diff)
+
+```
+
+
 # Scene 9
 
 **Prompt:** What is the 99% confidence interval for the difference in means between the treated and the controls? Provide a Bayesian and Frequentist definition of that interval. Write them down in your Rmd! Are these results consistent with what Enos finds? Check out the paper and see! Why am I using a 99% confidence interval here? Why not 99.5% or 97%?
 
+```{r}
+
+set.seed(1)
+train_confidence <- train %>%
+  rep_sample_n(size = 115, replace = TRUE, reps = 1000) %>%
+  group_by(replicate, treatment) %>%
+  summarize(average_change = mean(att_chg)) %>%
+  pivot_wider(id_cols = replicate, names_from = treatment, values_from = average_change) %>%
+  mutate(difference = Treated - Control) %>%
+  pull(difference) %>%
+  quantile(c(0.005, 0.995))
+  
+```
 
 # Scene 10
 
